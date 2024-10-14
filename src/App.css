@@ -1,0 +1,17 @@
+.app {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  max-height: 100vh;
+  padding: 24px;
+}
+
+.encoder {
+  border-radius: 10px;
+  max-width: 1000px;
+  min-width: 560px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  height: 60vh;
+}
