@@ -6,30 +6,50 @@ import {
   VideoClientContext,
   mediaController,
   types,
+  CameraButton,
+  ControlBar,
+  EncoderAudioDeviceSelect,
+  EncoderResolutionSelect,
+  EncoderVideo,
+  EncoderVideoDeviceSelect,
+  FullscreenButton,
+  JoinBroadcastButton,
+  MediaContainer,
+  MicrophoneButton,
+  ScreenCaptureButton,
+  SettingsButton,
+  SettingsSidebar,
 } from '@video/video-client-web';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { CallContextWrapper } from './CallContextWrapper';
+import { useVideoClient, createToken } from '../../hooks/useVideoClient';
 import { getRandomName } from '../../utils/names';
-import useVideoClient from '../../hooks/useVideoClient';
-import { serviceEndpoint } from "../../globalConfigs";
-
-interface EncoderContextProps {
-  children: React.ReactNode;
-}
 
 // React Context instances that manage the VideoClient and EncoderUI instances.
-export const EncoderContext: React.FC<EncoderContextProps> = ({ children }) => {
+const EncoderContext = (): React.ReactElement => {
   // State used to store the EncoderUiState.
   const [encoderUi, setEncoderUi] = useState<EncoderUiState | null>(null);
-  // State used to store the privateKey generated for our broadcaster.
-  const [privateKey, setPrivateKey] = useState<string | null>(null);
-  // State used to store the name of our user.
-  const [user, setUser] = useState<string | null>(null);
-
-  // Get the private key for our user on mount.
+  const [streamId, setStreamId] = useState<string | undefined>("");
+  const [videoClient, setVideoClient] = useState<types.VideoClientAPI | null>(null);
+  const [token, setToken] = useState<Promise<any> | undefined>(undefined);
+  const fetchToken = useCallback(async () => {
+    const { token, streamId } = await createToken(getRandomName(), "broadcaster");
+    setToken(token);
+    setStreamId(streamId || "");
+  }, []);
   useEffect(() => {
-    getPrivKey();
-  }, [])
+    fetchToken();
+  }, [fetchToken]);
+
+  useEffect(() => {
+    if (token) {
+      setVideoClient(useVideoClient(token));
+    }
+    return () => {
+      videoClient?.dispose();
+      setVideoClient(null);
+    };
+  }, [token]);
 
   // Initialize the EncoderUi instance
   useEffect(() => {
@@ -53,34 +73,39 @@ export const EncoderContext: React.FC<EncoderContextProps> = ({ children }) => {
     };
   }, [encoderUi]);
 
-  const getPrivKey = async() => {
-    // This is just grabbing a random name from our list, all displayNames and userIds should be unique.
-    const user = `demoUser${getRandomName()}${Math.floor(Math.random() * 10)}`;
-    setUser(user);
-    // Fetching our private key for the user we plan to broadcast with.
-      await fetch(`${serviceEndpoint}/private-key?user=${user}`)
-        .then(response => {
-        return response.json();
-      })
-      .then(data => {
-        // Store the private key
-        setPrivateKey(data.results.pvtKey);
-      })
-      .catch(error => {
-        console.error('Error:', error.message);
-      });
+  if (!videoClient || !streamId) {
+    return <></>;
   }
 
-  const videoClient = useVideoClient('owner', privateKey, user);
-
   return (
-    videoClient &&
     <VideoClientContext.Provider value={videoClient}>
       <EncoderUiContext.Provider value={encoderUi}>
         <CallContextWrapper>
-          {encoderUi != null && children}
+          {encoderUi != null && <div className="encoder">
+          <MediaContainer>
+            <EncoderVideo />
+            <ControlBar variant={"encoder"}>
+              <CameraButton />
+              <MicrophoneButton />
+              <JoinBroadcastButton setCallId={()=> {}} broadcastOptions={{ streamName: streamId }} />
+              <ScreenCaptureButton />
+              <FullscreenButton />
+              <SettingsButton />
+            </ControlBar>
+            <SettingsSidebar>
+              <div>
+                <EncoderVideoDeviceSelect />
+                <EncoderAudioDeviceSelect />
+                <EncoderResolutionSelect />
+              </div>
+            </SettingsSidebar>
+          </MediaContainer>
+      </div>
+      }
         </CallContextWrapper>
       </EncoderUiContext.Provider>
     </VideoClientContext.Provider>
   );
 }
+
+export default React.memo(EncoderContext);
