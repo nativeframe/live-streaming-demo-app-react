@@ -21,7 +21,7 @@ export const ManifestPlayer = () => {
   const { streamId } = useVideoClient('viewer');
   const manifestUrl = useManifestUrl(streamId);
 
-  if (!manifestUrl) {
+  if (!manifestUrl ) {
     return <p>Stream is offline or does not exist</p>
   }
 
