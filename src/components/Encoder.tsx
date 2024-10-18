@@ -1,5 +1,3 @@
-// Component: EncoderContext
-// About: This components main purpose is to create the context needed in order for our encoder to function, it utilizes our Encoder and VideoClient.
 import {
   EncoderUiContext,
   VideoClientContext,
