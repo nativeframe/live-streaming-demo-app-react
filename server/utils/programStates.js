@@ -35,12 +35,19 @@ function timeLimitedStream(req, res) {
 
 			console.log(`Stream ${streamId} has been running for ${streamRunningTime.toFixed(2)} seconds`);
 
+			const appData = {
+				"user.scope": "broadcaster",
+				"user.id": "123",
+				"user.name": "Bob",
+			}
+
 			response.programs[programId].streams[streamId] = {
 				needAuth: false,
 				stop: streamState.stopped,
 				stopReason: streamState.stopped ? "Stream duration limit reached" : undefined,
 				token: stream.token.value,
-				viewTokens: {}
+				viewTokens: {},
+				appData,
 			};
 
 			// Handle view tokens
