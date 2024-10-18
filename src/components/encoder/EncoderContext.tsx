@@ -20,10 +20,11 @@ import {
   SettingsButton,
   SettingsSidebar,
 } from '@video/video-client-web';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { CallContextWrapper } from './CallContextWrapper';
-import { useVideoClient, createToken } from '../../hooks/useVideoClient';
-import { getRandomName } from '../../utils/names';
+import { initVideoClient } from '../../utils/videoclient';
+import { createStream } from "../../utils/streams";
+import { fetchBroadcasterToken } from "../../utils/userAuth";
 
 // React Context instances that manage the VideoClient and EncoderUI instances.
 const EncoderContext = (): React.ReactElement => {
@@ -31,25 +32,22 @@ const EncoderContext = (): React.ReactElement => {
   const [encoderUi, setEncoderUi] = useState<EncoderUiState | null>(null);
   const [streamId, setStreamId] = useState<string | undefined>("");
   const [videoClient, setVideoClient] = useState<types.VideoClientAPI | null>(null);
-  const [token, setToken] = useState<Promise<any> | undefined>(undefined);
-  const fetchToken = useCallback(async () => {
-    const { token, streamId } = await createToken(getRandomName(), "broadcaster");
-    setToken(token);
-    setStreamId(streamId || "");
-  }, []);
-  useEffect(() => {
-    fetchToken();
-  }, [fetchToken]);
+  const fetchAllRef = useRef(false);
+  const fetchAll = useCallback(async () => {
+    if (fetchAllRef.current) return;
+    fetchAllRef.current = true;
 
+    const streamId = await createStream();
+    const token = await fetchBroadcasterToken(streamId);
+    const vc = await initVideoClient(token)
+    setStreamId(streamId || "");
+    setVideoClient(vc); 
+  }, []);
+
+  
   useEffect(() => {
-    if (token) {
-      setVideoClient(useVideoClient(token));
-    }
-    return () => {
-      videoClient?.dispose();
-      setVideoClient(null);
-    };
-  }, [token]);
+    fetchAll();
+  }, [fetchAll]);
 
   // Initialize the EncoderUi instance
   useEffect(() => {
@@ -82,26 +80,26 @@ const EncoderContext = (): React.ReactElement => {
       <EncoderUiContext.Provider value={encoderUi}>
         <CallContextWrapper>
           {encoderUi != null && <div className="encoder">
-          <MediaContainer>
-            <EncoderVideo />
-            <ControlBar variant={"encoder"}>
-              <CameraButton />
-              <MicrophoneButton />
-              <JoinBroadcastButton setCallId={()=> {}} broadcastOptions={{ streamName: streamId }} />
-              <ScreenCaptureButton />
-              <FullscreenButton />
-              <SettingsButton />
-            </ControlBar>
-            <SettingsSidebar>
-              <div>
-                <EncoderVideoDeviceSelect />
-                <EncoderAudioDeviceSelect />
-                <EncoderResolutionSelect />
-              </div>
-            </SettingsSidebar>
-          </MediaContainer>
-      </div>
-      }
+            <MediaContainer>
+              <EncoderVideo />
+              <ControlBar variant={"encoder"}>
+                <CameraButton />
+                <MicrophoneButton />
+                <JoinBroadcastButton setCallId={() => { }} broadcastOptions={{ streamName: streamId }} />
+                <ScreenCaptureButton />
+                <FullscreenButton />
+                <SettingsButton />
+              </ControlBar>
+              <SettingsSidebar>
+                <div>
+                  <EncoderVideoDeviceSelect />
+                  <EncoderAudioDeviceSelect />
+                  <EncoderResolutionSelect />
+                </div>
+              </SettingsSidebar>
+            </MediaContainer>
+          </div>
+          }
         </CallContextWrapper>
       </EncoderUiContext.Provider>
     </VideoClientContext.Provider>

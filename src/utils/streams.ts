@@ -1,49 +1,89 @@
-import { backendEndpoint, projectId, serviceJwt } from "../globalConfigs";
+const API_BASE_URL = 'http://localhost:3001/api'; // Adjust this if your server is on a different port or host
 
-// Creates a new public stream in the project
-export async function createStream(user: string): Promise<string> {
-    // Create stream
-    let streamId;
+export async function createStream(): Promise<string> {
+    const activeStream = localStorage.getItem("stream");
+    if (activeStream) {
+        return activeStream;
+    }
+
     try {
-        const options = {
-            "streamId": "",
-            "userId": user,
-            "authType": "public",
-            "roles": ["broadcaster"]
-        };
-        const response = await fetch(`${backendEndpoint}/program/api/v1/projects/${projectId}/create-claim`, {
+        const response = await fetch(`${API_BASE_URL}/streams/create`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify(options),
         });
-        const body = await response.json();
-        streamId = body["@nativeframe"].streamId;
-        return streamId;
-    } catch (error: any) {
-        console.error('Error:', error.message);
+
+        if (!response.ok) {
+            throw new Error('Failed to create stream');
+        }
+
+        const data: { streamId: string } = await response.json();
+        localStorage.setItem("stream", data.streamId);
+        return data.streamId;
+    } catch (error) {
+        console.error('Error creating stream:', error);
         throw error;
     }
 }
 
-export async function getActiveStreamId(): Promise<string> {
+export async function getActiveStreamId(): Promise<string | null> {
+    const activeStream = localStorage.getItem("stream");
+    if (activeStream) {
+        return activeStream;
+    }
+
     try {
-        const response = await fetch(`${backendEndpoint}/program/api/v1/projects/${projectId}/streams?active=true`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${serviceJwt}`
-            },
-        });
-        const body = await response.json();
-        if (body.streams.length === 0) {
-            throw new Error('No active streams found');
+        const response = await fetch(`${API_BASE_URL}/streams/active`);
+
+        if (!response.ok) {
+            throw new Error('Failed to get active stream ID');
         }
-        const streamId = body.streams[0].id;
-        return streamId;
-    } catch (error: any) {
-        console.error('Error:', error.message);
+
+        const data: { streamId: string | null } = await response.json();
+        if (data.streamId) {
+            localStorage.setItem("stream", data.streamId);
+        }
+        return data.streamId;
+    } catch (error) {
+        console.error('Error getting active stream ID:', error);
+        throw error;
+    }
+}
+
+export async function getManifestUrl(streamId: string): Promise<string> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/streams/${streamId}/manifest`);
+
+        if (!response.ok) {
+            throw new Error('Failed to get manifest URL');
+        }
+
+        const data: { manifestUrl: string } = await response.json();
+        return data.manifestUrl;
+    } catch (error) {
+        console.error('Error getting manifest URL:', error);
+        throw error;
+    }
+}
+
+interface Config {
+    backendEndpoint: string;
+    projectId: string;
+}
+
+export async function getConfig(): Promise<Config> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/config`);
+
+        if (!response.ok) {
+            throw new Error('Failed to get config');
+        }
+
+        const data: Config = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error getting config:', error);
         throw error;
     }
 }

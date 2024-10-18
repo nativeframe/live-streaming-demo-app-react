@@ -11,7 +11,10 @@ const App = () => {
         <Route path="/encoder" element={<EncoderContext />} />
       </Routes>
       <Routes>
-        <Route path="/manifest" element={<ManifestPlayer />} />
+        <Route path="/player" element={<ManifestPlayer />} />
+      </Routes>
+      <Routes>
+        <Route path="/" element={<EncoderContext />} />
       </Routes>
     </Router>
   );
