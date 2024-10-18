@@ -11,6 +11,11 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+if (!process.env.BACKEND_ENDPOINT || !process.env.PROJECT_ID || !process.env.SERVICE_JWT || !process.env.KID) {
+	console.error("please ensure all environment variables are set");
+	process.exit(1);
+}
+
 // Config route
 app.get('/api/config', (req, res) => {
 	res.json({
