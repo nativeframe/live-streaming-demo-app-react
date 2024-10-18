@@ -17,7 +17,7 @@ async function createStream() {
             headers: {
                 'Content-Type': 'application/json',
                 'x-user-id': uuidv4(),
-                'Authorization': `Bearer ${process.env.SERVICE_JWT}`
+                'Authorization': `Bearer ${process.env.SERVICE_ACCOUNT_JWT}`
             },
             body: JSON.stringify(options),
         });
@@ -40,7 +40,7 @@ async function getActiveStreamId() {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.SERVICE_JWT}`
+                'Authorization': `Bearer ${process.env.SERVICE_ACCOUNT_JWT}`
             },
         });
         if (response.status !== 200) {
@@ -66,7 +66,7 @@ async function getManifestUrl(streamId) {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.SERVICE_JWT}`
+                'Authorization': `Bearer ${process.env.SERVICE_ACCOUNT_JWT}`
             },
         });
         if (response.status !== 200) {

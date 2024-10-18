@@ -71,7 +71,7 @@ async function fetchVideoToken(options) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.SERVICE_JWT}`
+        "Authorization": `Bearer ${process.env.SERVICE_ACCOUNT_JWT}`
       },
       body: JSON.stringify(options),
     });

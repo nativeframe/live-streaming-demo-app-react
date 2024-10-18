@@ -16,7 +16,7 @@ function timeLimitedStream(req, res) {
 	for (const [programId, program] of Object.entries(programs)) {
 		response.programs[programId] = {
 			stop: false,
-			needAuth: false,
+			needAuth: true,
 			streams: {}
 		};
 
@@ -35,22 +35,40 @@ function timeLimitedStream(req, res) {
 
 			console.log(`Stream ${streamId} has been running for ${streamRunningTime.toFixed(2)} seconds`);
 
+			const appData = {
+				"user.scope": "broadcaster",
+				"user.id": "123",
+				"user.name": "Bob",
+			}
+
+			let token;
+			if (stream.token) {
+				token = stream.token.value;
+			}
+
 			response.programs[programId].streams[streamId] = {
-				needAuth: false,
+				needAuth: true,
 				stop: streamState.stopped,
 				stopReason: streamState.stopped ? "Stream duration limit reached" : undefined,
-				token: stream.token.value,
-				viewTokens: {}
+				token: token,
+				viewTokens: {},
+				appData,
 			};
 
 			// Handle view tokens
 			if (stream.viewTokens) {
 				for (const viewToken of stream.viewTokens) {
+					const appData = {
+						"user.scope": "viewer",
+						"user.id": "123",
+						"user.name": "Ben",
+					}
 					const viewerId = viewToken.value;
 					if (!viewerStates.has(viewerId)) {
 						viewerStates.set(viewerId, {
 							startTime: Date.now(),
-							stopped: false
+							stopped: false,
+							appData,
 						});
 						setTimeout(() => stopViewer(viewerId), 30000); // 30 seconds
 					}
@@ -62,7 +80,8 @@ function timeLimitedStream(req, res) {
 
 					response.programs[programId].streams[streamId].viewTokens[viewerId] = {
 						stop: viewerState.stopped,
-						stopReason: viewerState.stopped ? "Viewer time limit reached" : undefined
+						stopReason: viewerState.stopped ? "Viewer time limit reached" : undefined,
+						appData: viewerState.appData,
 					};
 				}
 			}
