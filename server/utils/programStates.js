@@ -5,6 +5,12 @@ const { setTimeout } = require('timers/promises');
 const streamStates = new Map();
 const viewerStates = new Map();
 
+// const MAX_STREAM_DURATION = 120000; // 2 minutes
+// const MAX_VIEWER_DURATION = 30000; // 30 seconds
+
+const MAX_STREAM_DURATION = 10000;
+const MAX_VIEWER_DURATION = 3000;
+
 function timeLimitedStream(req, res) {
 	const { programs } = req.body;
 	const now = Date.now();
@@ -23,11 +29,16 @@ function timeLimitedStream(req, res) {
 		for (const [streamId, stream] of Object.entries(program.streams)) {
 			// Initialize or update stream state
 			if (!streamStates.has(streamId)) {
+				const now = Date.now();
 				streamStates.set(streamId, {
-					startTime: Date.now(),
+					startTime: now,
 					stopped: false
 				});
-				setTimeout(() => stopStream(streamId), 120000); // 2 minutes
+
+				console.log(`Stream ${streamId} started at ${new Date(now).toISOString()}`);
+				setTimeout(MAX_STREAM_DURATION).then(() => {
+					stopStream(streamId);
+				});
 			}
 
 			const streamState = streamStates.get(streamId);
@@ -70,7 +81,7 @@ function timeLimitedStream(req, res) {
 							stopped: false,
 							appData,
 						});
-						setTimeout(() => stopViewer(viewerId), 30000); // 30 seconds
+						setTimeout(MAX_VIEWER_DURATION).then(() => stopViewer(viewerId));
 					}
 
 					const viewerState = viewerStates.get(viewerId);
@@ -94,9 +105,10 @@ function timeLimitedStream(req, res) {
 
 function stopStream(streamId) {
 	const streamState = streamStates.get(streamId);
+	
 	if (streamState) {
 		streamState.stopped = true;
-		console.log(`Stream ${streamId} stopped after 2 minutes`);
+		console.log(`Stream ${streamId} stopping after ${MAX_STREAM_DURATION / 1000} seconds`);
 	}
 }
 
@@ -104,7 +116,7 @@ function stopViewer(viewerId) {
 	const viewerState = viewerStates.get(viewerId);
 	if (viewerState) {
 		viewerState.stopped = true;
-		console.log(`Viewer ${viewerId} stopped after 30 seconds`);
+		console.log(`Viewer ${viewerId} stopped after ${MAX_VIEWER_DURATION / 1000} seconds`);
 	}
 }
 
