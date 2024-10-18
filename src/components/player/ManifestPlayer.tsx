@@ -19,11 +19,7 @@ export const ManifestPlayer = () => {
   // Stores the playerUi State.
   const [playerUi, setPlayerUi] = useState<PlayerUiState | null>(null);
   const [videoClient, setVideoClient] = useState<types.VideoClientAPI | null>(null);
-  const fetchAllRef = useRef(false);
   const fetchAll = useCallback(async () => {
-    if (fetchAllRef.current) return;
-    fetchAllRef.current = true;
-
     const streamId = await getActiveStreamId();
     if (!streamId) {
       setOffline(true);
@@ -43,7 +39,7 @@ export const ManifestPlayer = () => {
 
   useEffect(() => {
     fetchAll();
-  }, [fetchAll]);
+  }, []);
 
   useEffect(() => {
     // Check to make sure we have a videoClient, a manifestUrl and a token before we create our player

@@ -32,11 +32,7 @@ const EncoderContext = (): React.ReactElement => {
   const [encoderUi, setEncoderUi] = useState<EncoderUiState | null>(null);
   const [streamId, setStreamId] = useState<string | undefined>("");
   const [videoClient, setVideoClient] = useState<types.VideoClientAPI | null>(null);
-  const fetchAllRef = useRef(false);
   const fetchAll = useCallback(async () => {
-    if (fetchAllRef.current) return;
-    fetchAllRef.current = true;
-
     const streamId = await createStream();
     const token = await fetchBroadcasterToken(streamId);
     const vc = await initVideoClient(token)
@@ -47,7 +43,7 @@ const EncoderContext = (): React.ReactElement => {
   
   useEffect(() => {
     fetchAll();
-  }, [fetchAll]);
+  }, []);
 
   // Initialize the EncoderUi instance
   useEffect(() => {

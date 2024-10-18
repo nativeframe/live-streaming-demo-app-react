@@ -77,16 +77,6 @@ app.post('/api/auth/viewer', async (req, res) => {
 	}
 });
 
-app.post('/api/auth/program-states', async (req, res) => {
-	try {
-		const resp = await programStatesWebhook();
-		res.json({ token });
-	} catch (error) {
-		console.error("unable to get access token", error);
-		res.status(500).json({ error: error.message });
-	}
-});
-
 app.post('/api/webhook/timeLimitedStream', timeLimitedStream);
 
 app.listen(port, () => {
