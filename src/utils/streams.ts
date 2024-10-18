@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3001/api'; // Adjust this if your server is on a different port or host
+import { API_BASE_URL } from './config';
 
 export async function createStream(): Promise<string> {
     const activeStream = localStorage.getItem("stream");
