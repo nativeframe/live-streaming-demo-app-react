@@ -88,6 +88,88 @@ The ManifestPlayer component offers viewing capabilities with:
 - `POST /api/auth/viewer` - Get viewer token
 
 
+
+### Webhook demo
+
+### Setting up FRP (Fast Reverse Proxy)
+
+To expose your local development server to the internet, you'll need to set up FRP. Follow these steps:
+
+1. **Install FRP Client**
+   - Download the latest FRPC version for your platform from the [FRP GitHub Releases page](https://github.com/fatedier/frp/releases)
+   - Alternatively, you can use the FRPC Docker container through Docker Desktop
+
+2. **Configure FRP Client**
+   Create or edit `frpc.toml` with the following configuration:
+
+   ```toml
+   serverAddr = "frp.livelyvideo.tv"
+   serverPort = 7000
+   loginFailExit = false
+
+   # Authentication 
+   auth.method = "token"
+   auth.token = "L1v3lyD3v"
+
+   [[proxies]]
+   name = "webhook-demo"                
+   type = "http"                      # Protocol type
+   localIP = "127.0.0.1"              # Local service IP
+   localPort = 3001                   # Local service port
+   subdomain = "webhook-demo"         # Your subdomain (e.g., https://webhook-demo.frp.livelyvideo.tv/api)
+   ```
+
+3. **Start FRP Client**
+   ```bash
+   ./frpc -c ./frpc.toml
+   ```
+
+### Configuring Webhooks with FRP
+
+To set up webhooks using your FRP URL:
+
+1. Navigate to [NativeFrame Platform](https://platform.nativeframe.com/organizations)
+2. Select your project
+3. Go to Event Webhooks → program-states
+4. Click "Create Webhook"
+5. Set the webhook URL to: `https://webhook-demo.frp.livelyvideo.tv/api/webhook/updateProgramStates`
+6. Click "Create Webhook"
+
+Your service will now receive webhook events through the FRP tunnel.
+
+### Webhook Demo
+
+This demo provides a real-time program state management system that integrates with the NativeFrame Platform. Here's how to set it up and use it:
+
+#### Setup Steps
+1. Start your application (`npm start`)
+2. Navigate to `http://localhost:3000/program-state`
+3. Create a stream on the NativeFrame Platform with webhooks enabled
+4. Configure the webhook URL in your NativeFrame project settings
+5. Begin broadcasting your stream from the NativeFrame Project Ui.
+6. Open the NativeFrame Project Ui in another browser and begin viewing it.
+7. Watch the program state update in real-time on the program state page
+
+#### Features
+
+1. **Stream Management**
+   - Monitor active streams and their status
+   - Start/Stop individual streams
+   - View connected viewers for each stream
+
+2. **Viewer Control**
+   - Start/Stop individual viewers
+   - Monitor viewer states in real-time
+   - Track viewer connections and disconnections
+
+3. **State Monitoring**
+   - Real-time webhook request/response monitoring
+   - Live stream state updates
+   - Viewer state tracking
+   - Raw webhook data visualization
+
+The demo automatically cleans up inactive streams and viewers after 10 seconds of inactivity.
+
 ## Notes
 
 - This is a development setup and may require additional security measures for production
