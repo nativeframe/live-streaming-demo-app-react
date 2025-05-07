@@ -3,10 +3,21 @@ const express = require('express');
 const cors = require('cors');
 const { createStream, getActiveStreamId, getManifestUrl } = require('./utils/streams');
 const { fetchBroadcasterToken, fetchViewerToken } = require('./utils/userAuth');
-const { timeLimitedStream } = require('./utils/programStates');
+const { 
+	updateProgramStates,
+	stopProgramState,
+	streamStates,
+	startProgramState,
+	stopViewerState,
+	startViewerState 
+} = require('./utils/programStates');
 
 const app = express();
 const port = 3001;
+
+// Store the latest program state
+let currentRequest = null;
+let currentResponse = null;
 
 app.use(cors());
 app.use(express.json());
@@ -82,7 +93,52 @@ app.post('/api/auth/viewer', async (req, res) => {
 	}
 });
 
-app.post('/api/webhook/timeLimitedStream', timeLimitedStream);
+// Webhook endpoint for program states
+app.post('/api/webhook/updateProgramStates', (req, res) => {
+	console.log('Webhook called with body:', JSON.stringify(req.body));
+	currentRequest = req.body;
+	updateProgramStates(req, res);
+	currentResponse = res.locals.response;
+});
+
+// Endpoint to get current program state, streamStates, request and response
+app.get('/api/webhook/program-state', (req, res) => {
+	res.json({
+		request: currentRequest,
+		response: currentResponse,
+		streamStates: streamStates
+	});
+});
+
+// Endpoint to stop a stream
+app.post('/api/webhook/stopStream', (req, res) => {
+	const { streamId } = req.body;
+	stopProgramState(streamId);
+	res.json({ message: 'Stream stopped' });
+});
+
+// Endpoint to start a stream
+app.post('/api/webhook/startStream', (req, res) => {
+	const { streamId } = req.body;
+	startProgramState(streamId);
+	res.json({ message: 'Stream started' });
+});
+
+// Endpoint to stop a viewer
+app.post('/api/webhook/stopViewer', (req, res) => {
+	const { streamId, viewerId } = req.body;
+	stopViewerState(streamId, viewerId);
+	console.log("Viewer stopped", viewerId, "for stream", streamId);
+	res.json({ message: 'Viewer stopped' });
+});
+
+// Endpoint to start a viewer
+app.post('/api/webhook/startViewer', (req, res) => {
+	const { streamId, viewerId } = req.body;
+	startViewerState(streamId, viewerId);
+	res.json({ message: 'Viewer started' });
+});
+
 
 app.listen(port, () => {
 	console.log(`Server running at http://localhost:${port}`);

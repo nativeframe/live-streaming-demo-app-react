@@ -38,13 +38,17 @@ export const useVideoClient = (type: ClientType) => {
 
     initializeVideoClient();
 
-    // Cleanup on unmount or change
+    // Only cleanup when the component is actually unmounting
     return () => {
-      videoClient?.dispose("Cleaning up video client on unmount or change");
-      setStreamId(undefined);
-      setVideoClient(null);
+      if (videoClient) {
+        // Don't dispose the video client on type change
+        // Only dispose when the component is actually unmounting
+        videoClient.dispose("Cleaning up video client on unmount");
+        setStreamId(undefined);
+        setVideoClient(null);
+      }
     };
-  }, [type]);
+  }, []); // Remove type from dependencies to prevent recreation on type change
 
   return { streamId, videoClient };
 };

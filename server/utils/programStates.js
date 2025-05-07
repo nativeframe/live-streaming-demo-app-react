@@ -1,19 +1,38 @@
-const { setTimeout } = require('timers/promises');
-
-// In-memory storage for stream and viewer states
 // For demo purposes only (no memory management)
-const streamStates = new Map();
-const viewerStates = new Map();
+const streamStates = {};
 
-// const MAX_STREAM_DURATION = 120000; // 2 minutes
-// const MAX_VIEWER_DURATION = 30000; // 30 seconds
+// This stops a stream by setting the stopped flag to true
+function stopProgramState(streamId) {
+	streamStates[streamId] = {
+		startTime: Date.now(),
+		stopped: true,
+		stopReason: "Stream stopped manually",
+		viewerStates: {}
+	}
+}
 
-const MAX_STREAM_DURATION = 10000;
-const MAX_VIEWER_DURATION = 3000;
+// This starts a stream by setting the stopped flag to false
+function startProgramState(streamId) {
+	streamStates[streamId] = {
+		startTime: Date.now(),
+		stopped: false,
+		viewerStates: {}
+	};
+}
 
-function timeLimitedStream(req, res) {
+// This stops a viewer for a stream by setting the stopped flag to true
+function stopViewerState(streamId, viewerId) {
+	streamStates[streamId].viewerStates[viewerId].stopped = true;
+}
+
+// This starts a viewer for a stream by setting the stopped flag to false
+function startViewerState(streamId, viewerId) {
+	streamStates[streamId].viewerStates[viewerId].stopped = false;
+}
+
+function updateProgramStates(req, res) {
+
 	const { programs } = req.body;
-	const now = Date.now();
 
 	const response = {
 		programs: {}
@@ -27,25 +46,22 @@ function timeLimitedStream(req, res) {
 		};
 
 		for (const [streamId, stream] of Object.entries(program.streams)) {
-			// Initialize or update stream state
-			if (!streamStates.has(streamId)) {
+			// Initialize the stream state if it doesn't exist
+			if (!streamStates[streamId]) {
 				const now = Date.now();
-				streamStates.set(streamId, {
+				streamStates[streamId] = {
 					startTime: now,
-					stopped: false
-				});
-
+					stopped: false,
+					viewerStates: {}
+				};
 				console.log(`Stream ${streamId} started at ${new Date(now).toISOString()}`);
-				setTimeout(MAX_STREAM_DURATION).then(() => {
-					stopStream(streamId);
-				});
 			}
 
-			const streamState = streamStates.get(streamId);
-			const streamRunningTime = (now - streamState.startTime) / 1000; // in seconds
-
-			console.log(`Stream ${streamId} has been running for ${streamRunningTime.toFixed(2)} seconds`);
-
+			const streamState = streamStates[streamId];
+			// We use this to remove outdated streams from the streamStates object
+			streamState.updatedAt = Date.now();
+			
+			// This will be the appData for the stream, in this case we hard code values for demo purposes
 			const appData = {
 				"user.scope": "broadcaster",
 				"user.id": "123",
@@ -60,7 +76,7 @@ function timeLimitedStream(req, res) {
 			response.programs[programId].streams[streamId] = {
 				needAuth: true,
 				stop: streamState.stopped,
-				stopReason: streamState.stopped ? "Stream duration limit reached" : undefined,
+				stopReason: streamState.stopped ? "Stream stopped" : undefined,
 				token: token,
 				viewTokens: {},
 				appData,
@@ -69,57 +85,60 @@ function timeLimitedStream(req, res) {
 			// Handle view tokens
 			if (stream.viewTokens) {
 				for (const viewToken of stream.viewTokens) {
+					// This will be the appData for the viewer, in this case we hard code values for demo purposes
 					const appData = {
 						"user.scope": "viewer",
 						"user.id": "123",
 						"user.name": "Ben",
 					}
 					const viewerId = viewToken.value;
-					if (!viewerStates.has(viewerId)) {
-						viewerStates.set(viewerId, {
+					// Initialize the viewer state if it doesn't exist
+					if (!streamState.viewerStates[viewerId]) {
+						streamState.viewerStates[viewerId] = {
 							startTime: Date.now(),
 							stopped: false,
 							appData,
-						});
-						setTimeout(MAX_VIEWER_DURATION).then(() => stopViewer(viewerId));
+						};
+						console.log(`Viewer ${viewerId} added to stream ${streamId}`);
 					}
 
-					const viewerState = viewerStates.get(viewerId);
-					const viewerWatchingTime = (now - viewerState.startTime) / 1000; // in seconds
+					// We use this to remove outdated viewers from the streamStates object
+					streamState.viewerStates[viewerId].updatedAt = Date.now();
 
-					console.log(`Viewer ${viewerId} has been viewing for ${viewerWatchingTime.toFixed(2)} seconds`);
-
+					// Add the viewer state to the response
 					response.programs[programId].streams[streamId].viewTokens[viewerId] = {
-						stop: viewerState.stopped,
-						stopReason: viewerState.stopped ? "Viewer time limit reached" : undefined,
-						appData: viewerState.appData,
+						stop: streamState.viewerStates[viewerId].stopped,
+						appData: streamState.viewerStates[viewerId].appData,
 					};
 				}
 			}
 		}
 	}
-
-	console.log(JSON.stringify(response));
+	res.locals.response = response;
 	res.json(response);
 }
 
-function stopStream(streamId) {
-	const streamState = streamStates.get(streamId);
-	
-	if (streamState) {
-		streamState.stopped = true;
-		console.log(`Stream ${streamId} stopping after ${MAX_STREAM_DURATION / 1000} seconds`);
+// This removes outdated streams and viewers from the streamStates object
+setInterval(() => {
+	for (const streamId in streamStates) {
+		//Remove outdated users from streamStates
+		for (const viewerId in streamStates[streamId].viewerStates) {
+			if (streamStates[streamId].viewerStates[viewerId].updatedAt < Date.now() - 10000) {
+				delete streamStates[streamId].viewerStates[viewerId];
+			}
+		}
+		//Remove outdated streams from streamStates
+		if (streamStates[streamId].updatedAt < Date.now() - 10000) {
+			delete streamStates[streamId];
+		}
 	}
-}
-
-function stopViewer(viewerId) {
-	const viewerState = viewerStates.get(viewerId);
-	if (viewerState) {
-		viewerState.stopped = true;
-		console.log(`Viewer ${viewerId} stopped after ${MAX_VIEWER_DURATION / 1000} seconds`);
-	}
-}
+}, 10000);
 
 module.exports = {
-	timeLimitedStream
+	updateProgramStates,
+	stopProgramState,
+	streamStates,
+	startProgramState,
+	stopViewerState,
+	startViewerState,
 };
