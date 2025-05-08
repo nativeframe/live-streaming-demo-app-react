@@ -63,7 +63,7 @@ function updateProgramStates(req, res) {
 			
 			// This will be the appData for the stream, in this case we hard code values for demo purposes
 			const appData = {
-				"user.scope": "broadcaster",
+				"user.scope": "private-broadcaster",
 				"user.id": "123",
 				"user.name": "Bob",
 			}
@@ -87,7 +87,7 @@ function updateProgramStates(req, res) {
 				for (const viewToken of stream.viewTokens) {
 					// This will be the appData for the viewer, in this case we hard code values for demo purposes
 					const appData = {
-						"user.scope": "viewer",
+						"user.scope": "private-viewer",
 						"user.id": "123",
 						"user.name": "Ben",
 					}

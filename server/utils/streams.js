@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const fetch = require('node-fetch');
 
-// Creates a new public stream in the project
+// Creates a new stream in the project
 async function createStream() {
     const streamId = uuidv4();
     try {
@@ -9,7 +9,7 @@ async function createStream() {
             "streamId": streamId,
             "streamName": streamId,
             "authKey": uuidv4(),
-            "authType": "private",
+            "authType": "private+program-states",
         };
 
         const response = await fetch(`${process.env.BACKEND_ENDPOINT}/program/api/v1/projects/${process.env.PROJECT_ID}/streams`, {
