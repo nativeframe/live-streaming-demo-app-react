@@ -41,7 +41,7 @@ const Encoder = (): React.ReactElement => {
               <ControlBar variant={"encoder"}>
                 <CameraButton />
                 <MicrophoneButton />
-                <JoinBroadcastButton setCallId={() => { }} broadcastOptions={{ streamName: streamId }} />
+                <JoinBroadcastButton setCallId={() => { }} broadcastOptions={{ streamName: streamId }}  streamKey={streamId}/>
                 <ScreenCaptureButton />
                 <FullscreenButton />
                 <SettingsButton />

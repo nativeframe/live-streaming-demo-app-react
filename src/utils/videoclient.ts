@@ -5,15 +5,14 @@ import { v4 as uuidv4 } from 'uuid';
 export const initVideoClient = async (token?: string | any, authClient?: AlwaysAuthClient) => {
 	const config = await getConfig();
 	let user = uuidv4();
-	
 
 	// Setting the generated token and the backendEndpoint for the options to be passed to our new VideoClient instance
 	const videoClientOptions: types.VideoClientOptions = {
 		backendEndpoints: [config.backendEndpoint],
 		token: token,	
-		auth: authClient,
+		auth: token ? undefined : authClient,
 		userId: user,
-		projectId: config.projectId
+		projectId: authClient ? config.projectId : undefined
 	};
 	
 	const newVC = new VideoClient(videoClientOptions);
