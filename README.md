@@ -170,6 +170,14 @@ This demo provides a real-time program state management system that integrates w
 
 The demo automatically cleans up inactive streams and viewers after 10 seconds of inactivity.
 
+
+### Webhook Token Player
+The Player component provides a simpler way to view streams using a token-based authentication system:
+- Navigate to `http://localhost:3000/player` route
+- Enter your token in the input field
+- Click Submit to start viewing the stream
+
+
 ## Notes
 
 - This is a development setup and may require additional security measures for production

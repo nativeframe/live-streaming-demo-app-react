@@ -27,6 +27,7 @@ export const useVideoClient = (type: ClientType) => {
         }
 
         const newVideoClient = await initVideoClient(token);
+        
         setStreamId(newStreamId);
         setVideoClient(newVideoClient);
       } catch (error) {

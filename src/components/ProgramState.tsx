@@ -51,7 +51,7 @@ const ProgramState: React.FC = () => {
   };
 
   if (error) {
-    return <div className="p-4 text-red-500">{error}</div>;
+    return <div style={{ color: 'red', padding: '16px' }}>{error}</div>;
   }
 
   if (!streamStates) {
@@ -59,18 +59,26 @@ const ProgramState: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Live Program State</h1>
-      <div className="p-4 bg-white rounded-lg shadow">
-        <h2 className="text-xl font-bold mb-4">Program State</h2>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>Live Program State</h1>
+      <div style={{ padding: '16px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>Program State</h2>
         {Object.keys(streamStates).map((streamId: string) => {
           const streamState = streamStates[streamId];
           const isStopped = streamState?.stopped;
           
           return (
-            <div key={streamId} className="mb-4">
+            <div key={streamId} style={{ marginBottom: '16px' }}>
               <button
-                className={`mb-2 px-4 py-2 text-white rounded`}
+                style={{
+                  marginBottom: '8px',
+                  padding: '8px 16px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
                 onClick={() => handleToggleStream(streamId, isStopped)}
               >
                 {isStopped ? 'Start' : 'Stop'} Stream {streamId}
@@ -82,7 +90,16 @@ const ProgramState: React.FC = () => {
                 return (
                   <button
                     key={viewerId}
-                    className={`mb-2 px-4 py-2 text-white rounded`}
+                    style={{
+                      marginBottom: '8px',
+                      padding: '8px 16px',
+                      backgroundColor: '#28a745',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      marginLeft: '8px'
+                    }}
                     onClick={() => handleToggleViewer(streamId, viewerId, isViewerStopped)}
                   >
                     {isViewerStopped ? 'Start' : 'Stop'} Viewer {viewerId}
@@ -92,8 +109,14 @@ const ProgramState: React.FC = () => {
             </div>
           );
         })}
-        <div className="mb-6">
-          <pre className="bg-gray-50 p-4 rounded overflow-auto">
+        <div style={{ marginBottom: '24px' }}>
+          <pre style={{ 
+            backgroundColor: '#f8f9fa', 
+            padding: '16px', 
+            borderRadius: '4px', 
+            overflow: 'auto',
+            fontSize: '14px'
+          }}>
             {JSON.stringify({ streamStates, request: requestData, response: responseData }, null, 2)}
           </pre>
         </div>
