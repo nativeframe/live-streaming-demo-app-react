@@ -1,6 +1,38 @@
 // For demo purposes only (no memory management)
 const streamStates = {};
 
+
+function parseToken(token) {
+	if(token) {
+		const parts = token.split('$');
+		if (parts.length === 1 && (parts[0] === 'viewer' || parts[0] === 'broadcaster')) {
+			return [parts[0], '', '', 'false'];
+		}
+		if (parts.length === 3) {
+			return [...parts, 'false'];
+		}
+		if (parts.length === 4) {
+			return parts;
+		}
+	}		
+	return ['', '', '', 'true'];
+}
+
+function getAppDataAndStop(token) {
+	const appData = {};
+	const [scope, name, userId, stop] = parseToken(token);
+	const shouldStop = stop === 'true';
+
+	if (scope) {
+		appData['user.scope'] = scope;
+		appData['user.name'] = name;
+		appData['user.id'] = userId;
+	}
+
+	return [appData, shouldStop];
+}
+
+
 // This stops a stream by setting the stopped flag to true
 function stopProgramState(streamId) {
 	streamStates[streamId] = {
@@ -62,16 +94,13 @@ function updateProgramStates(req, res) {
 			streamState.updatedAt = Date.now();
 			
 			// This will be the appData for the stream, in this case we hard code values for demo purposes
-			const appData = {
-				"user.scope": "private-broadcaster",
-				"user.id": "123",
-				"user.name": "Bob",
-			}
 
 			let token;
 			if (stream.token) {
 				token = stream.token.value;
 			}
+
+			const [appData] = getAppDataAndStop(token);
 
 			response.programs[programId].streams[streamId] = {
 				needAuth: true,
@@ -85,12 +114,7 @@ function updateProgramStates(req, res) {
 			// Handle view tokens
 			if (stream.viewTokens) {
 				for (const viewToken of stream.viewTokens) {
-					// This will be the appData for the viewer, in this case we hard code values for demo purposes
-					const appData = {
-						"user.scope": "private-viewer",
-						"user.id": "123",
-						"user.name": "Ben",
-					}
+					const [appData] = getAppDataAndStop(viewToken.value);
 					const viewerId = viewToken.value;
 					// Initialize the viewer state if it doesn't exist
 					if (!streamState.viewerStates[viewerId]) {
@@ -133,6 +157,9 @@ setInterval(() => {
 		}
 	}
 }, 10000);
+
+
+
 
 module.exports = {
 	updateProgramStates,
