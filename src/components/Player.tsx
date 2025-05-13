@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { 
   ControlBar,
   MediaContainer,
@@ -9,18 +9,25 @@ import {
   PlayerOverlayButton,
   PlayerPlayButton,
   PlayerUiContext,
+  PlayerUiState,
   PlayerVideo,
   PlayerVolumeRange 
 } from "@video/video-client-web";
 import { useVideoPlayer } from "../hooks/Player";
 
 interface PlayerProps {
-  projectId: string;
+  token: string;
+  onReady?: (videoClient: any, streamId: string) => void;
 }
 
-export const Player: React.FC<PlayerProps> = ({ projectId }) => {
+export const Player: React.FC<PlayerProps> = ({ token, onReady }) => {
+  const { playerUi, videoClient, streamId } = useVideoPlayer(token);
 
-  const playerUi = useVideoPlayer(projectId);
+  useEffect(() => {
+    if (videoClient && streamId && onReady) {
+      onReady(videoClient, streamId);
+    }
+  }, [videoClient, streamId, onReady]);
 
   return (
     <>

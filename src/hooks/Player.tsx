@@ -6,6 +6,8 @@ import { getActiveStreamId } from '../utils/streams';
 export const useVideoPlayer = (projectId: string) => {
   const [videoClient, setVideoClient] = useState<types.VideoClientAPI | null>(null);
   const [playerUi, setPlayerUi] = useState<PlayerUiState | null>(null);
+  const [call, setCall] = useState<types.CallAPI | null>(null);
+  const [streamId, setStreamId] = useState<string>('');
 
   useEffect(() => {
     const initializeVideoClient = async () => {
@@ -14,9 +16,10 @@ export const useVideoPlayer = (projectId: string) => {
         const newVideoClient = await initVideoClient(projectId, authClient);
         setVideoClient(newVideoClient);
         const newStreamId = await getActiveStreamId() || '';
+        setStreamId(newStreamId);
         try {
-          const call = await newVideoClient.joinCall(newStreamId);
-          console.log('call', call);
+          const newCall = await newVideoClient.joinCall(newStreamId);
+          setCall(newCall);
         } catch (error) {
           console.error('Failed to join call:', error);
         }
@@ -36,6 +39,10 @@ export const useVideoPlayer = (projectId: string) => {
           playerUi.dispose("Cleaning up playerUi on unmount");
           setPlayerUi(null);
         }
+        if (call) {
+          call.close("Cleaning up call on unmount");
+          setCall(null);
+        }
       }
     };
   }, [projectId]);
@@ -48,6 +55,7 @@ export const useVideoPlayer = (projectId: string) => {
       setPlayerUi(newPlayerUi);
     };
 
+    // Since you are joined on the call this event will also fire when your own player is added, in this case you can add some logic to check if the player is yours and ignore it
     videoClient.on('playerAdded', handlePlayerAdded);
 
     return () => {
@@ -59,5 +67,5 @@ export const useVideoPlayer = (projectId: string) => {
     };
   }, [videoClient]);
 
-  return playerUi;
+  return { playerUi, videoClient, call, streamId };
 };
